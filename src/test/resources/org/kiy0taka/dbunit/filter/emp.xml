@@ -1,0 +1,22 @@
+<!--
+
+    Copyright (C) 2009 kiy0taka.org
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+<dataset>
+  <emp empno="7369" ename="SMITH" job="CLERK" mgr="7902" hiredate="1980-12-17" sal="800" comm="100" deptno="20"/>
+  <emp empno="7499" ename="ALLEN" job="SALESMAN" mgr="7698" hiredate="1981-02-20" sal="1600" comm="300" deptno="30"/>
+  <emp empno="7521" ename="WARD" job="SALESMAN" mgr="7698" hiredate="1981-02-22" sal="1250" comm="500" deptno="30"/>
+</dataset>
