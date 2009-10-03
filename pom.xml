@@ -27,6 +27,10 @@
     </developer>
   </developers>
 
+  <scm>
+    <url>http://github.com/kiy0taka/dbunit-runner</url>
+  </scm>
+
   <build>
     <plugins>
       <plugin>
