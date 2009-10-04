@@ -44,7 +44,7 @@ public class DataSetBuilderExcludeColumnsTest {
     }
 
     @Test
-    public void test() throws IOException, DatabaseUnitException {
+    public void excludeColumns() throws IOException, DatabaseUnitException {
         IDataSet in = new FlatXmlDataSet(getClass().getResource("filter/" + inFileName));
         IDataSet expected = new FlatXmlDataSet(getClass().getResource("filter/" + expectedFileName));
         IDataSet actual = new DataSetBuilder(in).excludeColumns(excludeColumns).toDataSet();
