@@ -15,6 +15,8 @@
  */
 package org.kiy0taka.dbunit;
 
+import static org.kiy0taka.dbunit.DataSetBuilder.dataSet;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -159,7 +161,7 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         public void evaluate() throws Throwable {
             IDatabaseConnection conn = createDatabaseConnection();
             try {
-                IDataSet initData = new DataSetBuilder(load(ann.init())).nullValue(ann.nullValue()).toDataSet();
+                IDataSet initData = dataSet(load(ann.init())).nullValue(ann.nullValue()).toDataSet();
                 ann.operation().toDatabaseOperation().execute(conn, initData);
                 stmt.evaluate();
                 if (testConnection != null) testConnection.commit();
@@ -176,10 +178,15 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         protected void assertTables() {
             IDatabaseConnection conn = createDatabaseConnection();
             try {
-                IDataSet expected = new DataSetBuilder(load(ann.expected()))
-                    .excludeColumns(ann.excludeColumns()).nullValue(ann.nullValue()).toDataSet();
-                IDataSet actual = new DataSetBuilder(conn.createDataSet(expected.getTableNames()))
-                    .excludeColumns(ann.excludeColumns()).toDataSet();
+                IDataSet expected = dataSet(load(ann.expected()))
+                    .excludeColumns(ann.excludeColumns())
+                    .nullValue(ann.nullValue())
+                    .trim(ann.trim())
+                    .toDataSet();
+                IDataSet actual = dataSet(conn.createDataSet(expected.getTableNames()))
+                    .excludeColumns(ann.excludeColumns())
+                    .trim(ann.trim())
+                    .toDataSet();
                 Assertion.assertEquals(expected, actual);
             } catch (SQLException e) {
                 throw new RuntimeException(e);

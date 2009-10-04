@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2009 kiy0taka.org
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.kiy0taka.dbunit;
 
 import java.util.ArrayList;
@@ -10,7 +25,9 @@ import java.util.Set;
 import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.DefaultDataSet;
 import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.ITable;
 import org.dbunit.dataset.ReplacementDataSet;
+import org.dbunit.dataset.ReplacementTable;
 import org.dbunit.dataset.filter.DefaultColumnFilter;
 
 /**
@@ -26,6 +43,8 @@ public class DataSetBuilder {
     private final List<String> defaultExcludeColumns = new ArrayList<String>();
 
     private final Map<String, List<String>> tableExcludeColumns = new HashMap<String, List<String>>();
+
+    private boolean isTrim;
 
     /**
      * Create new Builder.
@@ -78,6 +97,11 @@ public class DataSetBuilder {
         return this;
     }
 
+    public DataSetBuilder trim(boolean isTrim) {
+        this.isTrim = isTrim;
+        return this;
+    }
+
     /**
      * Convert this to {@link IDataSet}.
      * @return converted {@link IDataSet}
@@ -101,6 +125,33 @@ public class DataSetBuilder {
             }
             result = defaultDataSet;
         }
+        if (isTrim) {
+            DefaultDataSet defaultDataSet = new DefaultDataSet();
+            for (String tableName : result.getTableNames()) {
+                defaultDataSet.addTable(new TrimTable(result.getTable(tableName)));
+            }
+            result = defaultDataSet;
+        }
         return result;
+    }
+
+    public static DataSetBuilder dataSet(IDataSet dataSet) {
+        return new DataSetBuilder(dataSet);
+    }
+
+    private static class TrimTable extends ReplacementTable {
+
+        public TrimTable(ITable table) {
+            super(table);
+        }
+
+        @Override
+        public Object getValue(int row, String column) throws DataSetException {
+            Object result = super.getValue(row, column);
+            if (result instanceof String) {
+                return ((String) result).trim();
+            }
+            return result;
+        }
     }
 }

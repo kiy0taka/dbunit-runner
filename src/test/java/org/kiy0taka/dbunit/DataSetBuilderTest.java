@@ -1,81 +1,193 @@
+/**
+ * Copyright (C) 2009 kiy0taka.org
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.kiy0taka.dbunit;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertSame;
 
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.sql.Date;
 
+import org.dbunit.Assertion;
 import org.dbunit.DatabaseUnitException;
 import org.dbunit.dataset.Column;
 import org.dbunit.dataset.DataSetException;
+import org.dbunit.dataset.DefaultDataSet;
+import org.dbunit.dataset.DefaultTableMetaData;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.ITable;
-import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.dataset.ITableMetaData;
+import org.dbunit.dataset.datatype.DataType;
 import org.junit.Test;
 
 public class DataSetBuilderTest {
 
     @Test
     public void toDataSet() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("emp_with_nullvalue.xml"));
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "SMITH", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", Date.valueOf("1981-02-20"), new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), new BigDecimal("1250.00")}
+        }));
         IDataSet actual = new DataSetBuilder(dataSet).toDataSet();
         assertSame(dataSet, actual);
     }
 
     @Test
     public void nullValue() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("emp_with_nullvalue.xml"));
-        IDataSet actualDataSet = new DataSetBuilder(dataSet).nullValue("[null]").toDataSet();
-        ITable actualTable = actualDataSet.getTable("emp");
-        assertNull(actualTable.getValue(0, "job"));
-        assertNull(actualTable.getValue(1, "hiredate"));
-        assertNull(actualTable.getValue(2, "comm"));
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "[null]", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", "[null]", new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), "[null]"}
+        }));
+        IDataSet actual = new DataSetBuilder(dataSet).nullValue("[null]").toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, null, Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", null, new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), null}
+        }));
+        Assertion.assertEquals(actual, expected);
     }
 
     @Test
     public void nullValue_no_nullValue() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("emp.xml"));
-        IDataSet actualDataSet = new DataSetBuilder(dataSet).nullValue("[null]").toDataSet();
-        ITable actualTable = actualDataSet.getTable("emp");
-        assertNotNull(actualTable.getValue(0, "job"));
-        assertNotNull(actualTable.getValue(1, "hiredate"));
-        assertNotNull(actualTable.getValue(2, "comm"));
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "SMITH", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", Date.valueOf("1981-02-20"), new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), new BigDecimal("1250.00")}
+        }));
+        IDataSet actual = new DataSetBuilder(dataSet).nullValue("[null]").toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "SMITH", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", Date.valueOf("1981-02-20"), new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), new BigDecimal("1250.00")}
+        }));
+        Assertion.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void trim_true() throws IOException, DatabaseUnitException {
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {1, "aaa"},
+            {2, "bbb   "},
+            {3, "   ccc"},
+            {4, "  ddd   "},
+            {5, "  e e e   "}
+        }, EMPNO, ENAME));
+        IDataSet actual = new DataSetBuilder(dataSet).trim(true).toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {1, "aaa"},
+            {2, "bbb"},
+            {3, "ccc"},
+            {4, "ddd"},
+            {5, "e e e"}
+        }, EMPNO, ENAME));
+        Assertion.assertEquals(expected, actual);
+    }
+
+    @Test
+    public void trim_false() throws IOException, DatabaseUnitException {
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {1, "aaa"},
+            {2, "bbb   "},
+            {3, "   ccc"},
+            {4, "  ddd   "},
+            {5, "  e e e   "}
+        }, EMPNO, ENAME));
+        IDataSet actual = new DataSetBuilder(dataSet).trim(false).toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {1, "aaa"},
+            {2, "bbb   "},
+            {3, "   ccc"},
+            {4, "  ddd   "},
+            {5, "  e e e   "}
+        }, EMPNO, ENAME));
+        Assertion.assertEquals(expected, actual);
     }
 
     @Test
     public void nullValue_excludeColumns() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("emp_with_nullvalue.xml"));
-        assertTrue(containsColumn(dataSet.getTable("emp"), "empno"));
-
-        IDataSet actualDataSet = new DataSetBuilder(dataSet).excludeColumns("empno").nullValue("[null]").toDataSet();
-        ITable actualTable = actualDataSet.getTable("emp");
-
-        assertFalse(containsColumn(actualTable, "empno"));
-        assertNull(actualTable.getValue(0, "job"));
-        assertNull(actualTable.getValue(1, "hiredate"));
-        assertNull(actualTable.getValue(2, "comm"));
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "[null]", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", "[null]", new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), "[null]"}
+        }));
+        IDataSet actual = new DataSetBuilder(dataSet).excludeColumns("empno").nullValue("[null]").toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {null, Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {"ALLEN", null, new BigDecimal("1600.00")},
+            {"WARD", Date.valueOf("1981-02-22"), null}
+        }, ENAME, HIREDATE, SAL));
+        Assertion.assertEquals(expected, actual);
     }
 
     @Test
     public void excludeColumns_nullValue() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("emp_with_nullvalue.xml"));
-        assertTrue(containsColumn(dataSet.getTable("emp"), "empno"));
-
-        IDataSet actualDataSet = new DataSetBuilder(dataSet).nullValue("[null]").excludeColumns("empno").toDataSet();
-        ITable actualTable = actualDataSet.getTable("emp");
-
-        assertFalse(containsColumn(actualTable, "empno"));
-        assertNull(actualTable.getValue(0, "job"));
-        assertNull(actualTable.getValue(1, "hiredate"));
-        assertNull(actualTable.getValue(2, "comm"));
+        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
+            {7369, "[null]", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {7499, "ALLEN", "[null]", new BigDecimal("1600.00")},
+            {7521, "WARD", Date.valueOf("1981-02-22"), "[null]"}
+        }));
+        IDataSet actual = new DataSetBuilder(dataSet).nullValue("[null]").excludeColumns("empno").toDataSet();
+        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
+            {null, Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
+            {"ALLEN", null, new BigDecimal("1600.00")},
+            {"WARD", Date.valueOf("1981-02-22"), null}
+        }, ENAME, HIREDATE, SAL));
+        Assertion.assertEquals(expected, actual);
     }
 
-    private boolean containsColumn(ITable table, String columnName) throws DataSetException {
-        for (Column column : table.getTableMetaData().getColumns()) {
-            if (column.getColumnName().equals("empno")) {
-                return true;
-            }
+    private static Column EMPNO = new Column("empno", DataType.INTEGER);
+    private static Column ENAME = new Column("ename", DataType.VARCHAR);
+    private static Column HIREDATE = new Column("ename", DataType.VARCHAR);
+    private static Column SAL = new Column("sal", DataType.DECIMAL);
+
+    private static class MockTable implements ITable {
+
+        private ITableMetaData tableMetaData;
+
+        private Object[][] data;
+
+        public MockTable(Object[][] data) {
+            this(data, EMPNO, ENAME, HIREDATE, SAL);
         }
-        return false;
+
+        public MockTable(Object[][] data, Column... columns) {
+            this.data = data;
+            tableMetaData = new DefaultTableMetaData("emp", columns);
+        }
+
+        @Override
+        public int getRowCount() {
+            return data.length;
+        }
+
+        @Override
+        public ITableMetaData getTableMetaData() {
+            return tableMetaData;
+        }
+
+        @Override
+        public Object getValue(int row, String column) throws DataSetException {
+            int index = 0;
+            for (Column c : tableMetaData.getColumns()) {
+                if (c.getColumnName().equals(column)) break;
+                index++;
+            }
+            return data[row][index];
+        }
     }
 }
