@@ -357,6 +357,7 @@ public class DbUnitRunnerTest {
                 };
             }
         }.createStatment().assertTables();
+        verify(conn);
     }
 
     @Test(expected=AssertionError.class)
@@ -378,6 +379,7 @@ public class DbUnitRunnerTest {
                 };
             }
         }.createStatment().assertTables();
+        verify(conn);
     }
 
     @Test
@@ -405,6 +407,40 @@ public class DbUnitRunnerTest {
         } catch (RuntimeException e) {
             assertSame(failureCause, e.getCause());
         }
+        verify(conn);
+    }
+
+    @Test
+    @DbUnitTest(init="", expected="test.xml")
+    public void assertTables_databaseunitexception_occured() throws Throwable {
+        DataSetException failureCause = new DataSetException("failure");
+
+        IDataSet dataSet = createStrictMock(IDataSet.class);
+        expect(dataSet.getTableNames()).andThrow(failureCause);
+        replay(dataSet);
+
+        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
+        expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
+        conn.close();
+        replay(conn);
+
+        final DbUnitTest ann = getAnnotation();
+        try {
+            new DbUnitRunner(getClass()) {
+                protected DbUnitStatement createStatment() {
+                    return new DbUnitStatement(ann, null) {
+                        protected IDatabaseConnection createDatabaseConnection() {
+                            return conn;
+                        }
+                    };
+                }
+            }.createStatment().assertTables();
+            fail("Expecting RuntimeException");
+        } catch (RuntimeException e) {
+            assertSame(failureCause, e.getCause());
+        }
+        verify(dataSet);
+        verify(conn);
     }
 
     @Test
@@ -434,6 +470,7 @@ public class DbUnitRunnerTest {
         } catch (RuntimeException e) {
             assertSame(closeFailure, e.getCause());
         }
+        verify(conn);
     }
 
     @Test
