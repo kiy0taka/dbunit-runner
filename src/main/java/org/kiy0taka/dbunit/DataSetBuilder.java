@@ -97,8 +97,13 @@ public class DataSetBuilder {
         return this;
     }
 
-    public DataSetBuilder trim(boolean isTrim) {
-        this.isTrim = isTrim;
+    /**
+     * Trim string value.
+     * @param trim trim
+     * @return this builder
+     */
+    public DataSetBuilder trim(boolean trim) {
+        this.isTrim = trim;
         return this;
     }
 
@@ -135,6 +140,11 @@ public class DataSetBuilder {
         return result;
     }
 
+    /**
+     * Create new DataSetBuilder.
+     * @param dataSet {@link IDataSet}
+     * @return new DataSetBuilder
+     */
     public static DataSetBuilder dataSet(IDataSet dataSet) {
         return new DataSetBuilder(dataSet);
     }
