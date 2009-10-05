@@ -57,7 +57,7 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
     private static final ResourceBundle bundle;
 
     static {
-        bundle = PropertyResourceBundle.getBundle("dbunit-testrunner");
+        bundle = PropertyResourceBundle.getBundle("dbunit-runner");
         loadDriver(bundle.getString("driver"));
     }
 
