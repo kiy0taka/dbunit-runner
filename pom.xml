@@ -218,4 +218,11 @@
         </plugin>
     </plugins>
   </reporting>
+
+  <distributionManagement>
+    <repository>
+      <id>repo.kiy0taka.org</id>
+      <url>scp://repo.kiy0taka.org/home/kiy0taka333/www/kiy0taka/repo</url>
+    </repository>
+  </distributionManagement>
 </project>
