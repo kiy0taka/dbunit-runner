@@ -21,6 +21,7 @@
   <artifactId>dbunit-runner</artifactId>
   <name>DbUnit Runner</name>
   <version>1.0-beta-3-SNAPSHOT</version>
+  <url>http://www.kiy0taka.org/dbunit-runner/</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -45,7 +46,7 @@
 
   <scm>
     <connection>scm:git:git://github.com/kiy0taka/dbunit-runner.git</connection>
-    <url>http://github.com/kiy0taka/dbunit-runner</url>
+    <url>http://github.com/kiy0taka/dbunit-runner/</url>
   </scm>
 
   <build>
@@ -223,5 +224,9 @@
       <id>repo.kiy0taka.org</id>
       <url>scp://repo.kiy0taka.org/home/kiy0taka333/www/kiy0taka/repo</url>
     </repository>
+    <site>
+      <id>www.kiy0taka.org</id>
+      <url>scp://www.kiy0taka.org/home/kiy0taka333/www/kiy0taka/www/dbunit-runner/</url>
+    </site>
   </distributionManagement>
 </project>
