@@ -46,7 +46,6 @@
 
   <scm>
     <connection>scm:git:git://github.com/kiy0taka/dbunit-runner.git</connection>
-    <developerConnection>scm:git:git@github.com:kiy0taka/dbunit-runner.git </developerConnection>
     <url>http://github.com/kiy0taka/dbunit-runner</url>
   </scm>
 
