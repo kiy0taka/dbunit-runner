@@ -45,6 +45,8 @@
   </developers>
 
   <scm>
+    <connection>scm:git:git://github.com/kiy0taka/dbunit-runner.git</connection>
+    <developerConnection>scm:git:git@github.com:kiy0taka/dbunit-runner.git </developerConnection>
     <url>http://github.com/kiy0taka/dbunit-runner</url>
   </scm>
 
@@ -110,6 +112,7 @@
       </plugin>
     </plugins>
   </build>
+
   <dependencies>
     <dependency>
       <groupId>dbunit</groupId>
@@ -134,6 +137,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <reporting>
     <plugins>
       <plugin>
