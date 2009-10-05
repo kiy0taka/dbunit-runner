@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<project name="DbUnit">
+
+  <body>
+
+    <links>
+      <item name="JUnit" href="http://www.junit.org/index.htm"/>
+      <item name="DBUnit" href="http://www.dbunit.org"/>
+    </links>
+
+    <menu name="Overview">
+      <item name="Getting Started"  href="/howto.html"/>
+    </menu>
+
+    <menu ref="parent"/>
+    <menu ref="modules"/>
+    <menu ref="reports"/>
+
+  </body>
+
+</project>
