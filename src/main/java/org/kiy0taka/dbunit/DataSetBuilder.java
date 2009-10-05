@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.DefaultDataSet;
@@ -98,11 +99,11 @@ public class DataSetBuilder {
     }
 
     /**
-     * Trim string value.
+     * RTrim string value.
      * @param trim trim
      * @return this builder
      */
-    public DataSetBuilder trim(boolean trim) {
+    public DataSetBuilder rtrim(boolean trim) {
         this.isTrim = trim;
         return this;
     }
@@ -133,7 +134,7 @@ public class DataSetBuilder {
         if (isTrim) {
             DefaultDataSet defaultDataSet = new DefaultDataSet();
             for (String tableName : result.getTableNames()) {
-                defaultDataSet.addTable(new TrimTable(result.getTable(tableName)));
+                defaultDataSet.addTable(new RTrimTable(result.getTable(tableName)));
             }
             result = defaultDataSet;
         }
@@ -149,9 +150,10 @@ public class DataSetBuilder {
         return new DataSetBuilder(dataSet);
     }
 
-    private static class TrimTable extends ReplacementTable {
+    private static class RTrimTable extends ReplacementTable {
 
-        public TrimTable(ITable table) {
+        private static final Pattern RTRIM = Pattern.compile(" +$");
+        public RTrimTable(ITable table) {
             super(table);
         }
 
@@ -159,7 +161,7 @@ public class DataSetBuilder {
         public Object getValue(int row, String column) throws DataSetException {
             Object result = super.getValue(row, column);
             if (result instanceof String) {
-                return ((String) result).trim();
+                return RTRIM.matcher((String) result).replaceAll("");
             }
             return result;
         }

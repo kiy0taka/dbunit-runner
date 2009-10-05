@@ -60,7 +60,7 @@ public @interface DbUnitTest {
     /**
      * @return
      */
-    boolean trim() default false;
+    boolean rtrim() default false;
 
     /**
      * Annotation of Database operation.

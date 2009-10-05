@@ -181,11 +181,11 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
                 IDataSet expected = dataSet(load(ann.expected()))
                     .excludeColumns(ann.excludeColumns())
                     .nullValue(ann.nullValue())
-                    .trim(ann.trim())
+                    .rtrim(ann.rtrim())
                     .toDataSet();
                 IDataSet actual = dataSet(conn.createDataSet(expected.getTableNames()))
                     .excludeColumns(ann.excludeColumns())
-                    .trim(ann.trim())
+                    .rtrim(ann.rtrim())
                     .toDataSet();
                 Assertion.assertEquals(expected, actual);
             } catch (SQLException e) {

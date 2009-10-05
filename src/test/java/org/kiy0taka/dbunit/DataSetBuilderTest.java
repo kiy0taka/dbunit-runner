@@ -79,7 +79,7 @@ public class DataSetBuilderTest {
     }
 
     @Test
-    public void trim_true() throws IOException, DatabaseUnitException {
+    public void rtrim_true() throws IOException, DatabaseUnitException {
         IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
             {1, "aaa"},
             {2, "bbb   "},
@@ -87,19 +87,19 @@ public class DataSetBuilderTest {
             {4, "  ddd   "},
             {5, "  e e e   "}
         }, EMPNO, ENAME));
-        IDataSet actual = new DataSetBuilder(dataSet).trim(true).toDataSet();
+        IDataSet actual = new DataSetBuilder(dataSet).rtrim(true).toDataSet();
         IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
             {1, "aaa"},
             {2, "bbb"},
-            {3, "ccc"},
-            {4, "ddd"},
-            {5, "e e e"}
+            {3, "   ccc"},
+            {4, "  ddd"},
+            {5, "  e e e"}
         }, EMPNO, ENAME));
         Assertion.assertEquals(expected, actual);
     }
 
     @Test
-    public void trim_false() throws IOException, DatabaseUnitException {
+    public void rtrim_false() throws IOException, DatabaseUnitException {
         IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
             {1, "aaa"},
             {2, "bbb   "},
@@ -107,7 +107,7 @@ public class DataSetBuilderTest {
             {4, "  ddd   "},
             {5, "  e e e   "}
         }, EMPNO, ENAME));
-        IDataSet actual = new DataSetBuilder(dataSet).trim(false).toDataSet();
+        IDataSet actual = new DataSetBuilder(dataSet).rtrim(false).toDataSet();
         IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
             {1, "aaa"},
             {2, "bbb   "},
@@ -119,33 +119,20 @@ public class DataSetBuilderTest {
     }
 
     @Test
-    public void nullValue_excludeColumns() throws IOException, DatabaseUnitException {
+    public void nullValue_excludeColumns_rtrim() throws IOException, DatabaseUnitException {
         IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
             {7369, "[null]", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
             {7499, "ALLEN", "[null]", new BigDecimal("1600.00")},
-            {7521, "WARD", Date.valueOf("1981-02-22"), "[null]"}
+            {7521, " WARD ", Date.valueOf("1981-02-22"), "[null]"}
         }));
-        IDataSet actual = new DataSetBuilder(dataSet).excludeColumns("empno").nullValue("[null]").toDataSet();
+        IDataSet actual = new DataSetBuilder(dataSet)
+            .nullValue("[null]")
+            .excludeColumns("empno")
+            .rtrim(true).toDataSet();
         IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
             {null, Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
             {"ALLEN", null, new BigDecimal("1600.00")},
-            {"WARD", Date.valueOf("1981-02-22"), null}
-        }, ENAME, HIREDATE, SAL));
-        Assertion.assertEquals(expected, actual);
-    }
-
-    @Test
-    public void excludeColumns_nullValue() throws IOException, DatabaseUnitException {
-        IDataSet dataSet = new DefaultDataSet(new MockTable(new Object[][] {
-            {7369, "[null]", Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
-            {7499, "ALLEN", "[null]", new BigDecimal("1600.00")},
-            {7521, "WARD", Date.valueOf("1981-02-22"), "[null]"}
-        }));
-        IDataSet actual = new DataSetBuilder(dataSet).nullValue("[null]").excludeColumns("empno").toDataSet();
-        IDataSet expected = new DefaultDataSet(new MockTable(new Object[][] {
-            {null, Date.valueOf("1980-12-17"), new BigDecimal("800.00")},
-            {"ALLEN", null, new BigDecimal("1600.00")},
-            {"WARD", Date.valueOf("1981-02-22"), null}
+            {" WARD", Date.valueOf("1981-02-22"), null}
         }, ENAME, HIREDATE, SAL));
         Assertion.assertEquals(expected, actual);
     }
