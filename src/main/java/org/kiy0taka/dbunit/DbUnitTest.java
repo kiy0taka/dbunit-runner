@@ -20,6 +20,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.dbunit.dataset.DataSetException;
+import org.dbunit.dataset.IDataSet;
+import org.dbunit.dataset.SortedDataSet;
 import org.dbunit.operation.DatabaseOperation;
 
 
@@ -58,9 +61,14 @@ public @interface DbUnitTest {
     String nullValue() default "";
 
     /**
-     * @return
+     * Right trim String value.
      */
     boolean rtrim() default false;
+
+    /**
+     * Sort data set.
+     */
+    Sort sort() default Sort.AUTO;
 
     /**
      * Annotation of Database operation.
@@ -121,5 +129,49 @@ public @interface DbUnitTest {
         public DatabaseOperation toDatabaseOperation() {
             return operation;
         }
+    }
+
+    /**
+     * DataSet sort storategy.
+     * @author kiy0taka
+     *
+     */
+    public enum Sort {
+
+        /**
+         * Sort the decorated table by its own columns order.
+         * All table columns will be used.
+         * @author kiy0taka
+         */
+        AUTO {
+
+            /**
+             * @see org.kiy0taka.dbunit.DbUnitTest.Sort#sort(org.dbunit.dataset.IDataSet)
+             */
+            public IDataSet sort(IDataSet dataSet) throws DataSetException {
+                return new SortedDataSet(dataSet);
+            }
+        },
+
+        /**
+         * No sort.
+         * @author kiy0taka
+         */
+        NONE {
+
+            /**
+             * @see org.kiy0taka.dbunit.DbUnitTest.Sort#sort(org.dbunit.dataset.IDataSet)
+             */
+            public IDataSet sort(IDataSet dataSet) {
+                return dataSet;
+            }
+        };
+
+        /**
+         * Sort Data set.
+         * @param dataSet Data set
+         * @return sorted data set
+         */
+        public abstract IDataSet sort(IDataSet dataSet) throws DataSetException;
     }
 }
