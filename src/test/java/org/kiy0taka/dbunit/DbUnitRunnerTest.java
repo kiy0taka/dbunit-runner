@@ -119,46 +119,34 @@ public class DbUnitRunnerTest {
     @DbUnitTest(init="test.xml", operation=Operation.NONE)
     public void evaluate_success() throws Throwable {
 
-        final Connection conn = createStrictMock(Connection.class);
+        Connection conn = createStrictMock(Connection.class);
         conn.commit();
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
-        new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                testConnection = conn;
-                return new DbUnitStatement(ann, new Statement() {
-                    public void evaluate() throws Throwable {}
-                });
-            }
-        }.createStatment().evaluate();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.testConnection = conn;
+        runner.new DbUnitStatement(getAnnotation(), mockStatement()).evaluate();
 
         verify(conn);
     }
 
     @Test
     @DbUnitTest(init="test.xml", expected="test.xml", operation=Operation.NONE)
-    public void evaluate_assert_table_failure() throws Throwable {
-        final Connection conn = createStrictMock(Connection.class);
+    public void evaluate_assert_tables_failure() throws Throwable {
+        Connection conn = createStrictMock(Connection.class);
         conn.commit();
         conn.close();
         replay(conn);
-        final DbUnitTest ann = getAnnotation();
+
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.testConnection = conn;
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    testConnection = conn;
-                    return new DbUnitStatement(ann, new Statement() {
-                        public void evaluate() throws Throwable {}
-                    }) {
-                        @Override
-                        protected void assertTables() {
-                            assertTrue("Expected", false);
-                        }
-                    };
+            runner.new DbUnitStatement(getAnnotation(), mockStatement()) {
+                protected void assertTables() {
+                    assertTrue("Expected", false);
                 }
-            }.createStatment().evaluate();
+            }.evaluate();
         } catch (AssertionError e) {
             assertEquals("Expected", e.getMessage());
         }
@@ -169,22 +157,19 @@ public class DbUnitRunnerTest {
     @DbUnitTest(init="test.xml", expected="test.xml", operation=Operation.NONE)
     public void evaluate_exception_occured_at_test_method() throws Throwable {
         final Exception failureCause = new Exception("test error");
-        final Connection conn = createStrictMock(Connection.class);
+        Connection conn = createStrictMock(Connection.class);
         conn.rollback();
         conn.close();
         replay(conn);
-        final DbUnitTest ann = getAnnotation();
+
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.testConnection = conn;
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    testConnection = conn;
-                    return new DbUnitStatement(ann, new Statement() {
-                        public void evaluate() throws Throwable {
-                            throw failureCause;
-                        }
-                    });
+            runner.new DbUnitStatement(getAnnotation(), new Statement() {
+                public void evaluate() throws Throwable {
+                    throw failureCause;
                 }
-            }.createStatment().evaluate();
+            }).evaluate();
             fail("Expecting Exception");
         } catch (Exception e) {
             assertSame(failureCause, e);
@@ -197,23 +182,17 @@ public class DbUnitRunnerTest {
     public void evaluate_exception_occured_at_commit() throws Throwable {
 
         SQLException commitFailure = new SQLException("commit failure");
-        final Connection conn = createStrictMock(Connection.class);
+        Connection conn = createStrictMock(Connection.class);
         conn.commit();
         expectLastCall().andThrow(commitFailure);
         conn.rollback();
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.testConnection = conn;
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    testConnection = conn;
-                    return new DbUnitStatement(ann, new Statement() {
-                        public void evaluate() throws Throwable {}
-                    });
-                }
-            }.createStatment().evaluate();
+            runner.new DbUnitStatement(getAnnotation(), mockStatement()).evaluate();
             fail("Expecting RuntimeException");
         } catch (SQLException e) {
             assertSame(commitFailure, e);
@@ -225,31 +204,20 @@ public class DbUnitRunnerTest {
     @Test
     @DbUnitTest(init="test.xml", operation=Operation.NONE)
     public void evaluate_no_test_connection() throws Throwable {
-        final DbUnitTest ann = getAnnotation();
-        new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                return new DbUnitStatement(ann, new Statement() {
-                    public void evaluate() throws Throwable {}
-                });
-            }
-        }.createStatment().evaluate();
+        new DbUnitRunner(getClass()).new DbUnitStatement(getAnnotation(), mockStatement()).evaluate();
     }
 
     @Test
     @DbUnitTest(init="test.xml", operation=Operation.NONE)
     public void evaluate_exception_occured_at_test_method_no_test_connection() throws Throwable {
         final Exception failureCause = new Exception("test error");
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(ann, new Statement() {
-                        public void evaluate() throws Throwable {
-                            throw failureCause;
-                        }
-                    });
+            runner.new DbUnitStatement(getAnnotation(), new Statement() {
+                public void evaluate() throws Throwable {
+                    throw failureCause;
                 }
-            }.createStatment().evaluate();
+            }).evaluate();
             fail("Expecting Exception");
         } catch (Exception e) {
             assertSame(failureCause, e);
@@ -259,33 +227,21 @@ public class DbUnitRunnerTest {
     @Test
     public void load_xml() throws Exception {
         IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("test.xml"));
-        IDataSet actual = new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                return new DbUnitStatement(null, null);
-            }
-        }.createStatment().load("test.xml");
+        IDataSet actual = new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("test.xml");
         Assertion.assertEquals(dataSet, actual);
     }
 
     @Test
     public void load_xls() throws Exception {
         IDataSet expected = new XlsDataSet(getClass().getResource("test.xls").openStream());
-        IDataSet actual = new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                return new DbUnitStatement(null, null);
-            }
-        }.createStatment().load("test.xls");
+        IDataSet actual = new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("test.xls");
         Assertion.assertEquals(expected, actual);
     }
 
     @Test
     public void load_file_not_found() throws Exception {
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(null, null);
-                }
-            }.createStatment().load("not_found");
+            new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("not_found");
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertTrue(e.getCause() instanceof FileNotFoundException);
@@ -295,11 +251,7 @@ public class DbUnitRunnerTest {
     @Test
     public void load_invalid_format() throws Exception {
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(null, null);
-                }
-            }.createStatment().load("invalid.xml");
+            new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("invalid.xml");
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertTrue(e.getCause() instanceof DataSetException);
@@ -309,11 +261,7 @@ public class DbUnitRunnerTest {
     @Test
     public void load_unknown_type() throws Exception {
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(null, null);
-                }
-            }.createStatment().load("test.txt");
+            new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("test.txt");
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertTrue(e.getCause() instanceof IllegalArgumentException);
@@ -347,16 +295,12 @@ public class DbUnitRunnerTest {
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
-        new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                return new DbUnitStatement(ann, null) {
-                    protected IDatabaseConnection createDatabaseConnection() {
-                        return conn;
-                    }
-                };
+        new DbUnitRunner(getClass()).new DbUnitStatement(getAnnotation(), null) {
+            protected IDatabaseConnection createDatabaseConnection() {
+                return conn;
             }
-        }.createStatment().assertTables();
+        }.assertTables();
+
         verify(conn);
     }
 
@@ -369,16 +313,13 @@ public class DbUnitRunnerTest {
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
-        new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                return new DbUnitStatement(ann, null) {
-                    protected IDatabaseConnection createDatabaseConnection() {
-                        return conn;
-                    }
-                };
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.new DbUnitStatement(getAnnotation(), null) {
+            protected IDatabaseConnection createDatabaseConnection() {
+                return conn;
             }
-        }.createStatment().assertTables();
+        }.assertTables();
+
         verify(conn);
     }
 
@@ -392,17 +333,13 @@ public class DbUnitRunnerTest {
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(ann, null) {
-                        protected IDatabaseConnection createDatabaseConnection() {
-                            return conn;
-                        }
-                    };
+            runner.new DbUnitStatement(getAnnotation(), null) {
+                protected IDatabaseConnection createDatabaseConnection() {
+                    return conn;
                 }
-            }.createStatment().assertTables();
+            }.assertTables();
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertSame(failureCause, e.getCause());
@@ -424,17 +361,13 @@ public class DbUnitRunnerTest {
         conn.close();
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(ann, null) {
-                        protected IDatabaseConnection createDatabaseConnection() {
-                            return conn;
-                        }
-                    };
+            runner.new DbUnitStatement(getAnnotation(), null) {
+                protected IDatabaseConnection createDatabaseConnection() {
+                    return conn;
                 }
-            }.createStatment().assertTables();
+            }.assertTables();
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertSame(failureCause, e.getCause());
@@ -455,17 +388,13 @@ public class DbUnitRunnerTest {
         expectLastCall().andThrow(closeFailure);
         replay(conn);
 
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(ann, null) {
-                        protected IDatabaseConnection createDatabaseConnection() {
-                            return conn;
-                        }
-                    };
+            runner.new DbUnitStatement(getAnnotation(), null) {
+                protected IDatabaseConnection createDatabaseConnection() {
+                    return conn;
                 }
-            }.createStatment().assertTables();
+            }.assertTables();
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertSame(closeFailure, e.getCause());
@@ -478,17 +407,13 @@ public class DbUnitRunnerTest {
     public void assertTables_exception_occured_at_create_conn() throws Throwable {
         final RuntimeException createFailure = new RuntimeException("create failure");
 
-        final DbUnitTest ann = getAnnotation();
+        DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
-            new DbUnitRunner(getClass()) {
-                protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(ann, null) {
-                        protected IDatabaseConnection createDatabaseConnection() {
-                            throw createFailure;
-                        }
-                    };
+            runner.new DbUnitStatement(getAnnotation(), null) {
+                protected IDatabaseConnection createDatabaseConnection() {
+                    throw createFailure;
                 }
-            }.createStatment().assertTables();
+            }.assertTables();
             fail("Expecting RuntimeException");
         } catch (RuntimeException e) {
             assertSame(createFailure, e);
@@ -497,12 +422,7 @@ public class DbUnitRunnerTest {
 
     @Test
     public void createDatabaseConnection() throws InitializationError {
-        assertNotNull(new DbUnitRunner(getClass()) {
-            protected DbUnitStatement createStatment() {
-                    return new DbUnitStatement(null, null) {
-                };
-            }
-        }.createStatment().createDatabaseConnection());
+        assertNotNull(new DbUnitRunner(getClass()).new DbUnitStatement(null, null).createDatabaseConnection());
     }
 
     private Method getMethod() {
@@ -521,4 +441,9 @@ public class DbUnitRunnerTest {
         return getMethod(2).getAnnotation(DbUnitTest.class);
     }
 
+    private Statement mockStatement() {
+        return new Statement() {
+            public void evaluate() throws Throwable {}
+        };
+    }
 }

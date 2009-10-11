@@ -16,6 +16,10 @@
 package org.kiy0taka.dbunit;
 
 import static org.junit.Assert.assertSame;
+import static org.kiy0taka.dbunit.MockTable.EMPNO;
+import static org.kiy0taka.dbunit.MockTable.ENAME;
+import static org.kiy0taka.dbunit.MockTable.HIREDATE;
+import static org.kiy0taka.dbunit.MockTable.SAL;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -23,14 +27,8 @@ import java.sql.Date;
 
 import org.dbunit.Assertion;
 import org.dbunit.DatabaseUnitException;
-import org.dbunit.dataset.Column;
-import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.DefaultDataSet;
-import org.dbunit.dataset.DefaultTableMetaData;
 import org.dbunit.dataset.IDataSet;
-import org.dbunit.dataset.ITable;
-import org.dbunit.dataset.ITableMetaData;
-import org.dbunit.dataset.datatype.DataType;
 import org.junit.Test;
 
 public class DataSetBuilderTest {
@@ -137,44 +135,4 @@ public class DataSetBuilderTest {
         Assertion.assertEquals(expected, actual);
     }
 
-    private static Column EMPNO = new Column("empno", DataType.INTEGER);
-    private static Column ENAME = new Column("ename", DataType.VARCHAR);
-    private static Column HIREDATE = new Column("ename", DataType.VARCHAR);
-    private static Column SAL = new Column("sal", DataType.DECIMAL);
-
-    private static class MockTable implements ITable {
-
-        private ITableMetaData tableMetaData;
-
-        private Object[][] data;
-
-        public MockTable(Object[][] data) {
-            this(data, EMPNO, ENAME, HIREDATE, SAL);
-        }
-
-        public MockTable(Object[][] data, Column... columns) {
-            this.data = data;
-            tableMetaData = new DefaultTableMetaData("emp", columns);
-        }
-
-        @Override
-        public int getRowCount() {
-            return data.length;
-        }
-
-        @Override
-        public ITableMetaData getTableMetaData() {
-            return tableMetaData;
-        }
-
-        @Override
-        public Object getValue(int row, String column) throws DataSetException {
-            int index = 0;
-            for (Column c : tableMetaData.getColumns()) {
-                if (c.getColumnName().equals(column)) break;
-                index++;
-            }
-            return data[row][index];
-        }
-    }
 }
