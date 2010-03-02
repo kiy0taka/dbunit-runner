@@ -141,7 +141,6 @@ public @interface DbUnitTest {
         /**
          * Sort the decorated table by its own columns order.
          * All table columns will be used.
-         * @author kiy0taka
          */
         AUTO {
 
@@ -155,7 +154,6 @@ public @interface DbUnitTest {
 
         /**
          * No sort.
-         * @author kiy0taka
          */
         NONE {
 

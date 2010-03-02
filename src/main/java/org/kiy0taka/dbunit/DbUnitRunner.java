@@ -24,7 +24,6 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -34,9 +33,12 @@ import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Set;
 
+import javax.sql.DataSource;
+
+import org.apache.commons.dbcp.BasicDataSource;
 import org.dbunit.Assertion;
 import org.dbunit.DatabaseUnitException;
-import org.dbunit.database.DatabaseConnection;
+import org.dbunit.database.DatabaseDataSourceConnection;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.IDataSet;
@@ -54,11 +56,11 @@ import org.junit.runners.model.Statement;
  */
 public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
-    private static final ResourceBundle bundle;
+    private static final ResourceBundle BUNDLE;
 
     static {
-        bundle = PropertyResourceBundle.getBundle("dbunit-runner");
-        loadDriver(bundle.getString("driver"));
+        BUNDLE = PropertyResourceBundle.getBundle("dbunit-runner");
+        loadDriver(BUNDLE.getString("driver"));
     }
 
     protected static void loadDriver(String driverName) {
@@ -83,13 +85,15 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         public abstract IDataSet createDataSet(URL url) throws DataSetException, IOException;
     }
 
+    protected DataSource dataSource;
+
     protected Connection testConnection;
 
-    protected String jdbcUrl = bundle.getString("url");
+    protected String jdbcUrl = BUNDLE.getString("url");
 
-    protected String username = bundle.getString("username");
+    protected String username = BUNDLE.getString("username");
 
-    protected String password = bundle.getString("password");
+    protected String password = BUNDLE.getString("password");
 
     /**
      * Constract Runner for DbUnit.
@@ -103,8 +107,7 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
     protected Statement methodBlock(final FrameworkMethod method) {
         Statement stmt = super.methodBlock(method);
         DbUnitTest ann = method.getAnnotation(DbUnitTest.class);
-        if (ann == null) return stmt;
-        return new DbUnitStatement(ann, stmt);
+        return ann == null ? stmt : new DbUnitStatement(ann, stmt);
     }
 
     protected List<FrameworkMethod> computeTestMethods() {
@@ -115,24 +118,33 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
     protected Object createTest() throws Exception {
         Object result = super.createTest();
-        List<FrameworkField> methods = getTestClass().getAnnotatedFields(TestConnection.class);
-        if (!methods.isEmpty()) testConnection = createConnection(false);
-        for (FrameworkField ff : methods) {
-            final Field f = ff.getField();
-            AccessController.doPrivileged(new SetAccessibleAction(f));
-            f.set(result, testConnection);
+        dataSource = createDataSource();
+        List<FrameworkField> connFields = getTestClass().getAnnotatedFields(TestConnection.class);
+        if (!connFields.isEmpty()) {
+            testConnection = dataSource.getConnection();
+            for (FrameworkField ff : connFields) {
+                final Field f = ff.getField();
+                AccessController.doPrivileged(new SetAccessibleAction(f));
+                f.set(result, testConnection);
+            }
+        }
+        List<FrameworkField> dsFields = getTestClass().getAnnotatedFields(TestDataSource.class);
+        if (!dsFields.isEmpty()) {
+            for (FrameworkField ff : dsFields) {
+                final Field f = ff.getField();
+                AccessController.doPrivileged(new SetAccessibleAction(f));
+                f.set(result, dataSource);
+            }
         }
         return result;
     }
 
-    protected Connection createConnection(boolean autoCommit) {
-        try {
-            Connection result = DriverManager.getConnection(jdbcUrl, username, password);
-            result.setAutoCommit(autoCommit);
-            return result;
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+    protected DataSource createDataSource() {
+        BasicDataSource result = new BasicDataSource();
+        result.setUsername(username);
+        result.setPassword(password);
+        result.setUrl(jdbcUrl);
+        return result;
     }
 
     private static class SetAccessibleAction implements PrivilegedAction<Object> {
@@ -164,15 +176,23 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
                 IDataSet initData = dataSet(load(ann.init())).nullValue(ann.nullValue()).toDataSet();
                 ann.operation().toDatabaseOperation().execute(conn, initData);
                 stmt.evaluate();
-                if (testConnection != null) testConnection.commit();
+                if (testConnection != null) {
+                    testConnection.commit();
+                }
             } catch (Throwable e) {
-                if (testConnection != null) testConnection.rollback();
+                if (testConnection != null) {
+                    testConnection.rollback();
+                }
                 throw e;
             } finally {
-                if (testConnection != null) testConnection.close();
+                if (testConnection != null) {
+                    testConnection.close();
+                }
                 conn.close();
             }
-            if (!ann.expected().isEmpty()) assertTables();
+            if (!ann.expected().isEmpty()) {
+                assertTables();
+            }
         }
 
         protected void assertTables() {
@@ -203,7 +223,9 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
         protected IDataSet load(String path) {
             URL url = getTestClass().getJavaClass().getResource(path);
-            if (url == null) throw new RuntimeException(new FileNotFoundException(path));
+            if (url == null) {
+                throw new RuntimeException(new FileNotFoundException(path));
+            }
             String suffix = path.substring(path.lastIndexOf('.') + 1).toLowerCase(Locale.getDefault());
             try {
                 return DataSetType.valueOf(suffix).createDataSet(url);
@@ -213,7 +235,11 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         }
 
         protected IDatabaseConnection createDatabaseConnection() {
-            return new DatabaseConnection(createConnection(true));
+            try {
+                return new DatabaseDataSourceConnection(dataSource);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
