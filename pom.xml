@@ -22,6 +22,10 @@
   <name>DbUnit Runner</name>
   <version>1.0-beta-3-SNAPSHOT</version>
   <url>http://www.kiy0taka.org/dbunit-runner/</url>
+  <organization>
+    <name>kiy0taka.org</name>
+    <url>http://www.kiy0taka.org/</url>
+  </organization>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -124,6 +128,11 @@
       <version>4.7</version>
     </dependency>
     <dependency>
+      <groupId>commons-dbcp</groupId>
+      <artifactId>commons-dbcp</artifactId>
+      <version>1.4</version>
+    </dependency>
+    <dependency>
       <groupId>com.h2database</groupId>
       <artifactId>h2</artifactId>
       <version>1.1.118</version>
@@ -159,6 +168,8 @@
           <docencoding>UTF-8</docencoding>
           <charset>UTF-8</charset>
           <links>
+            <link>http://junit.org/junit/javadoc/4.5/</link>
+            <link>http://www.dbunit.org/apidocs/</link>
           </links>
         </configuration>
       </plugin>
@@ -175,8 +186,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.5</version>
         <configuration>
-          <configLocation>src/checkstyle/checks.xml</configLocation>
+          <configLocation>${basedir}/src/checkstyle/checks.xml</configLocation>
+          <suppressionsLocation>${basedir}/src/checkstyle/suppressions.xml</suppressionsLocation>
         </configuration>
       </plugin>
       <plugin>

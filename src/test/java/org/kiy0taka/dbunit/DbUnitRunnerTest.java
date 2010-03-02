@@ -35,6 +35,8 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import javax.sql.DataSource;
+
 import org.dbunit.Assertion;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.DataSetException;
@@ -51,7 +53,7 @@ import org.kiy0taka.dbunit.DbUnitTest.Operation;
 public class DbUnitRunnerTest {
 
     @TestConnection
-    protected Connection publicWithAnnotation;
+    public Connection publicWithAnnotation;
 
     @TestConnection
     protected Connection protectedWithAnnotation;
@@ -100,8 +102,8 @@ public class DbUnitRunnerTest {
     }
 
     @Test
-    public void createConnection() throws InitializationError {
-        assertNotNull(new DbUnitRunner(getClass()).createConnection(false));
+    public void createDataSource() throws InitializationError {
+        assertNotNull(new DbUnitRunner(getClass()).createDataSource());
     }
 
     @Test
@@ -109,7 +111,7 @@ public class DbUnitRunnerTest {
         try {
             DbUnitRunner runner = new DbUnitRunner(getClass());
             runner.jdbcUrl = "not found.";
-            runner.createConnection(false);
+            runner.createDataSource();
         } catch (RuntimeException e) {
             assertTrue(e.getCause() instanceof SQLException);
         }
@@ -271,8 +273,13 @@ public class DbUnitRunnerTest {
     @Test
     public void createTest() throws Exception {
         final Connection conn = createNiceMock(Connection.class);
+        final DataSource ds = createNiceMock(DataSource.class);
+        expect(ds.getConnection()).andReturn(conn);
+        replay(ds);
         DbUnitRunnerTest test = (DbUnitRunnerTest) new DbUnitRunner(getClass()) {
-            protected Connection createConnection(boolean autoCommit) { return conn; }
+            protected DataSource createDataSource() {
+                return ds;
+            }
         }.createTest();
 
         assertSame("public with anntation", conn, test.publicWithAnnotation);
