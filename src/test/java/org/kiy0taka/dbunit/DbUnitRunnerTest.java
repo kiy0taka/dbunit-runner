@@ -31,9 +31,13 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.PropertyResourceBundle;
+import java.util.ResourceBundle;
 
 import javax.sql.DataSource;
 
@@ -43,12 +47,14 @@ import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.excel.XlsDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.dataset.xml.FlatXmlProducer;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 import org.kiy0taka.dbunit.DbUnitRunner.DbUnitStatement;
 import org.kiy0taka.dbunit.DbUnitTest.Operation;
+import org.xml.sax.InputSource;
 
 public class DbUnitRunnerTest {
 
@@ -228,7 +234,8 @@ public class DbUnitRunnerTest {
 
     @Test
     public void load_xml() throws Exception {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("test.xml"));
+        IDataSet dataSet = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
         IDataSet actual = new DbUnitRunner(getClass()).new DbUnitStatement(null, null).load("test.xml");
         Assertion.assertEquals(dataSet, actual);
     }
@@ -296,7 +303,8 @@ public class DbUnitRunnerTest {
     @Test
     @DbUnitTest(init="", expected="test.xml")
     public void assertTables_success() throws Throwable {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("test.xml"));
+        IDataSet dataSet = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
         final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
         expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
         conn.close();
@@ -314,7 +322,8 @@ public class DbUnitRunnerTest {
     @Test(expected=AssertionError.class)
     @DbUnitTest(init="", expected="assertFailure.xml")
     public void assertTables_failure() throws Throwable {
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("test.xml"));
+        IDataSet dataSet = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
         final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
         expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
         conn.close();
@@ -387,7 +396,8 @@ public class DbUnitRunnerTest {
     @DbUnitTest(init="", expected="test.xml")
     public void assertTables_exception_occured_at_close() throws Throwable {
         SQLException closeFailure = new SQLException("close failure");
-        IDataSet dataSet = new FlatXmlDataSet(getClass().getResource("test.xml"));
+        IDataSet dataSet = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
 
         final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
         expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
@@ -430,6 +440,18 @@ public class DbUnitRunnerTest {
     @Test
     public void createDatabaseConnection() throws InitializationError {
         assertNotNull(new DbUnitRunner(getClass()).new DbUnitStatement(null, null).createDatabaseConnection());
+    }
+
+    @Test
+    public void optionalValue() throws IOException {
+        ResourceBundle bundle = new PropertyResourceBundle(new StringReader("key=value"));
+        assertEquals("value", DbUnitRunner.optionalValue(bundle, "key"));
+    }
+
+    @Test
+    public void optionalValue_missing() throws IOException {
+        ResourceBundle bundle = new PropertyResourceBundle(new StringReader(""));
+        assertNull(DbUnitRunner.optionalValue(bundle, "key"));
     }
 
     private Method getMethod() {

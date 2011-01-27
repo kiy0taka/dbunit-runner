@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -44,11 +45,13 @@ import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.excel.XlsDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.dataset.xml.FlatXmlProducer;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkField;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
+import org.xml.sax.InputSource;
 
 /**
  * JUnit Runner implementation for DbUnit.
@@ -74,7 +77,7 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
     private enum DataSetType {
         xml() {
             public IDataSet createDataSet(URL url) throws DataSetException, IOException {
-                return new FlatXmlDataSet(url);
+                return new FlatXmlDataSet(new FlatXmlProducer(new InputSource(url.openStream())));
             }
         },
         xls() {
@@ -94,6 +97,8 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
     protected String username = BUNDLE.getString("username");
 
     protected String password = BUNDLE.getString("password");
+
+    protected String schema = optionalValue(BUNDLE, "schema");
 
     /**
      * Constract Runner for DbUnit.
@@ -145,6 +150,14 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         result.setPassword(password);
         result.setUrl(jdbcUrl);
         return result;
+    }
+
+    protected static String optionalValue(ResourceBundle bundle, String key) {
+        try {
+            return bundle.getString(key);
+        } catch (MissingResourceException ignore) {
+            return null;
+        }
     }
 
     private static class SetAccessibleAction implements PrivilegedAction<Object> {
@@ -236,7 +249,7 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
         protected IDatabaseConnection createDatabaseConnection() {
             try {
-                return new DatabaseDataSourceConnection(dataSource);
+                return new DatabaseDataSourceConnection(dataSource, schema);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }

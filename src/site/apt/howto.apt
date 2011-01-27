@@ -1,9 +1,7 @@
  -----
- Title
+ Getting Started
  -----
- Author
  -----
- Date
  -----
 
 ~~ http://maven.apache.org/doxia/references/apt-format.html
@@ -28,9 +26,16 @@ Getting Started
     <dependency>
       <groupId>org.kiy0taka</groupId>
       <artifactId>dbunit-runner</artifactId>
-      <version>1.0-beta-3</version>
+      <version>1.0-beta-4</version>
       <scope>test</scope>
     </dependency>
+    <!--
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-nop</artifactId>
+      <version>1.5.6</version>
+    </dependency>
+    -->
     [...]
   </dependencies>
   [...]
@@ -48,6 +53,7 @@ driver=org.h2.Driver
 url=jdbc:h2:target/db;SCHEMA=dev
 username=scott
 password=tiger
+#schema=dev
 ----
 
 *Test Example

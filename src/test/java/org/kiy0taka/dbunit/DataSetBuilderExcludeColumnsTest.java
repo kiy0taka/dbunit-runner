@@ -23,10 +23,12 @@ import org.dbunit.Assertion;
 import org.dbunit.DatabaseUnitException;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
+import org.dbunit.dataset.xml.FlatXmlProducer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+import org.xml.sax.InputSource;
 
 @RunWith(Parameterized.class)
 public class DataSetBuilderExcludeColumnsTest {
@@ -45,8 +47,10 @@ public class DataSetBuilderExcludeColumnsTest {
 
     @Test
     public void excludeColumns() throws IOException, DatabaseUnitException {
-        IDataSet in = new FlatXmlDataSet(getClass().getResource("filter/" + inFileName));
-        IDataSet expected = new FlatXmlDataSet(getClass().getResource("filter/" + expectedFileName));
+        IDataSet in = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("filter/" + inFileName))));
+        IDataSet expected = new FlatXmlDataSet(
+            new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("filter/" + expectedFileName))));
         IDataSet actual = new DataSetBuilder(in).excludeColumns(excludeColumns).toDataSet();
         Assertion.assertEquals(expected, actual);
     }
