@@ -20,7 +20,7 @@
   <groupId>org.kiy0taka</groupId>
   <artifactId>dbunit-runner</artifactId>
   <name>DbUnit Runner</name>
-  <version>1.0-beta-5-SNAPSHOT</version>
+  <version>1.0-beta-5</version>
   <url>http://www.kiy0taka.org/dbunit-runner/</url>
   <description>JUnit Runner implementation for DbUnit</description>
   <organization>
