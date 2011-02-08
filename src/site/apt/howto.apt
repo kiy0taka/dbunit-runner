@@ -49,12 +49,21 @@ Getting Started
   [[2]] Edit database properties.
 
 ----
+###############################################################################
+# Configure database connection
+###############################################################################
 driver=org.h2.Driver
 url=jdbc:h2:target/db;SCHEMA=dev
 username=scott
 password=tiger
 #schema=dev
+
+###############################################################################
+# Configure features and properties (http://www.dbunit.org/properties.html)
+###############################################################################
+http://www.dbunit.org/properties/datatypeFactory=org.dbunit.ext.h2.H2DataTypeFactory 
 ----
+
 
 *Test Example
 
