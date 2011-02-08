@@ -36,18 +36,21 @@ import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 
 import javax.sql.DataSource;
 
 import org.dbunit.Assertion;
+import org.dbunit.database.DatabaseConfig;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.DataSetException;
 import org.dbunit.dataset.IDataSet;
 import org.dbunit.dataset.excel.XlsDataSet;
 import org.dbunit.dataset.xml.FlatXmlDataSet;
 import org.dbunit.dataset.xml.FlatXmlProducer;
+import org.dbunit.ext.postgresql.PostgresqlDataTypeFactory;
 import org.junit.Test;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -113,7 +116,7 @@ public class DbUnitRunnerTest {
     }
 
     @Test
-    public void createConnection_failure() throws InitializationError {
+    public void createDataSource_failure() throws InitializationError {
         try {
             DbUnitRunner runner = new DbUnitRunner(getClass());
             runner.jdbcUrl = "not found.";
@@ -440,6 +443,31 @@ public class DbUnitRunnerTest {
     @Test
     public void createDatabaseConnection() throws InitializationError {
         assertNotNull(new DbUnitRunner(getClass()).new DbUnitStatement(null, null).createDatabaseConnection());
+    }
+
+    @Test
+    public void createDatabaseConnection_with_boolean_Property() throws InitializationError {
+        Properties properties = new Properties();
+        properties.setProperty("http://www.dbunit.org/features/batchedStatements", "true");
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.configProperties = properties;
+        IDatabaseConnection connection = runner.new DbUnitStatement(null, null).createDatabaseConnection();
+        DatabaseConfig config = connection.getConfig();
+        assertTrue((Boolean) config.getProperty("http://www.dbunit.org/features/batchedStatements"));
+    }
+
+    @Test
+    public void createDatabaseConnection_with_Object_Property() throws InitializationError {
+        Properties properties = new Properties();
+        properties.setProperty("http://www.dbunit.org/properties/datatypeFactory",
+            "org.dbunit.ext.postgresql.PostgresqlDataTypeFactory");
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        runner.configProperties = properties;
+        IDatabaseConnection connection = runner.new DbUnitStatement(null, null).createDatabaseConnection();
+        DatabaseConfig config = connection.getConfig();
+
+        assertEquals(PostgresqlDataTypeFactory.class,
+            config.getProperty("http://www.dbunit.org/properties/datatypeFactory").getClass());
     }
 
     @Test

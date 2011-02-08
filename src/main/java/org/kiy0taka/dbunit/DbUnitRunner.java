@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Properties;
 import java.util.PropertyResourceBundle;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -39,6 +40,8 @@ import javax.sql.DataSource;
 import org.apache.commons.dbcp.BasicDataSource;
 import org.dbunit.Assertion;
 import org.dbunit.DatabaseUnitException;
+import org.dbunit.database.DatabaseConfig;
+import org.dbunit.database.DatabaseConfig.ConfigProperty;
 import org.dbunit.database.DatabaseDataSourceConnection;
 import org.dbunit.database.IDatabaseConnection;
 import org.dbunit.dataset.DataSetException;
@@ -100,6 +103,8 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
     protected String schema = optionalValue(BUNDLE, "schema");
 
+    protected Properties configProperties = new Properties();
+
     /**
      * Constract Runner for DbUnit.
      * @param testClass Test Class
@@ -107,6 +112,11 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
      */
     public DbUnitRunner(Class<?> testClass) throws InitializationError {
         super(testClass);
+        for (ConfigProperty cp : DatabaseConfig.ALL_PROPERTIES) {
+            try {
+                configProperties.put(cp.getProperty(), BUNDLE.getString(cp.getProperty()));
+            } catch (MissingResourceException ignore) {}
+        }
     }
 
     protected Statement methodBlock(final FrameworkMethod method) {
@@ -249,8 +259,13 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
         protected IDatabaseConnection createDatabaseConnection() {
             try {
-                return new DatabaseDataSourceConnection(dataSource, schema);
+                DatabaseDataSourceConnection result = new DatabaseDataSourceConnection(dataSource, schema);
+                DatabaseConfig config = result.getConfig();
+                config.setPropertiesByString(configProperties);
+                return result;
             } catch (SQLException e) {
+                throw new RuntimeException(e);
+            } catch (DatabaseUnitException e) {
                 throw new RuntimeException(e);
             }
         }
