@@ -61,7 +61,7 @@ password=tiger
 ###############################################################################
 # Configure features and properties (http://www.dbunit.org/properties.html)
 ###############################################################################
-http://www.dbunit.org/properties/datatypeFactory=org.dbunit.ext.h2.H2DataTypeFactory 
+http\://www.dbunit.org/properties/datatypeFactory=org.dbunit.ext.h2.H2DataTypeFactory 
 ----
 
 

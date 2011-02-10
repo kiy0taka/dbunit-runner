@@ -15,13 +15,6 @@
  */
 package org.kiy0taka.dbunit;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createNiceMock;
-import static org.easymock.EasyMock.createStrictMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.expectLastCall;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -29,12 +22,19 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.anyObject;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.lang.reflect.Method;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Properties;
 import java.util.PropertyResourceBundle;
@@ -62,24 +62,44 @@ import org.xml.sax.InputSource;
 public class DbUnitRunnerTest {
 
     @TestConnection
-    public Connection publicWithAnnotation;
+    public Connection publicConnectionWithAnnotation;
 
     @TestConnection
-    protected Connection protectedWithAnnotation;
+    protected Connection protectedConnectionWithAnnotation;
 
     @TestConnection
-    Connection packageWithAnnotation;
+    Connection packageConnectionWithAnnotation;
 
     @TestConnection
-    private Connection privateWithAnnotation;
+    private Connection privateConnectionWithAnnotation;
 
-    protected Connection publicNonAnnotation;
+    protected Connection publicConnectionNonAnnotation;
 
-    protected Connection protectedNonAnnotation;
+    protected Connection protectedConnectionNonAnnotation;
 
-    Connection packageNonAnnotation;
+    Connection packageConnectionNonAnnotation;
 
-    private Connection privateNonAnnotation;
+    private Connection privateConnectionNonAnnotation;
+
+    @TestDataSource
+    public DataSource publicDataSourceWithAnnotation;
+
+    @TestDataSource
+    protected DataSource protectedDataSourceWithAnnotation;
+
+    @TestDataSource
+    DataSource packageDataSourceWithAnnotation;
+
+    @TestDataSource
+    private DataSource privateDataSourceWithAnnotation;
+
+    public DataSource publicDataSourceNonAnnotation;
+
+    protected DataSource protectedDataSourceNonAnnotation;
+
+    DataSource packageDataSourceNonAnnotation;
+
+    private DataSource privateDataSourceNonAnnotation;
 
     @Test
     public void loadDriver() {
@@ -130,25 +150,21 @@ public class DbUnitRunnerTest {
     @DbUnitTest(init="test.xml", operation=Operation.NONE)
     public void evaluate_success() throws Throwable {
 
-        Connection conn = createStrictMock(Connection.class);
-        conn.commit();
-        conn.close();
-        replay(conn);
+        Connection conn = mock(Connection.class);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         runner.testConnection = conn;
         runner.new DbUnitStatement(getAnnotation(), mockStatement()).evaluate();
 
-        verify(conn);
+        verify(conn).commit();
+        verify(conn).close();
+        verifyNoMoreInteractions(conn);
     }
 
     @Test
     @DbUnitTest(init="test.xml", expected="test.xml", operation=Operation.NONE)
     public void evaluate_assert_tables_failure() throws Throwable {
-        Connection conn = createStrictMock(Connection.class);
-        conn.commit();
-        conn.close();
-        replay(conn);
+        Connection conn = mock(Connection.class);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         runner.testConnection = conn;
@@ -161,17 +177,13 @@ public class DbUnitRunnerTest {
         } catch (AssertionError e) {
             assertEquals("Expected", e.getMessage());
         }
-        verify(conn);
     }
 
     @Test
     @DbUnitTest(init="test.xml", expected="test.xml", operation=Operation.NONE)
     public void evaluate_exception_occured_at_test_method() throws Throwable {
         final Exception failureCause = new Exception("test error");
-        Connection conn = createStrictMock(Connection.class);
-        conn.rollback();
-        conn.close();
-        replay(conn);
+        Connection conn = mock(Connection.class);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         runner.testConnection = conn;
@@ -185,7 +197,6 @@ public class DbUnitRunnerTest {
         } catch (Exception e) {
             assertSame(failureCause, e);
         }
-        verify(conn);
     }
 
     @Test
@@ -193,12 +204,8 @@ public class DbUnitRunnerTest {
     public void evaluate_exception_occured_at_commit() throws Throwable {
 
         SQLException commitFailure = new SQLException("commit failure");
-        Connection conn = createStrictMock(Connection.class);
-        conn.commit();
-        expectLastCall().andThrow(commitFailure);
-        conn.rollback();
-        conn.close();
-        replay(conn);
+        Connection conn = mock(Connection.class);
+        doThrow(commitFailure).when(conn).commit();
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         runner.testConnection = conn;
@@ -208,8 +215,6 @@ public class DbUnitRunnerTest {
         } catch (SQLException e) {
             assertSame(commitFailure, e);
         }
-
-        verify(conn);
     }
 
     @Test
@@ -281,26 +286,45 @@ public class DbUnitRunnerTest {
     }
 
     @Test
-    public void createTest() throws Exception {
-        final Connection conn = createNiceMock(Connection.class);
-        final DataSource ds = createNiceMock(DataSource.class);
-        expect(ds.getConnection()).andReturn(conn);
-        replay(ds);
+    public void createTest_Connection() throws Exception {
+        final Connection conn = mock(Connection.class);
+        final DataSource ds = mock(DataSource.class);
+        when(ds.getConnection()).thenReturn(conn);
         DbUnitRunnerTest test = (DbUnitRunnerTest) new DbUnitRunner(getClass()) {
             protected DataSource createDataSource() {
                 return ds;
             }
         }.createTest();
 
-        assertSame("public with anntation", conn, test.publicWithAnnotation);
-        assertSame("protected with anntation", conn, test.protectedWithAnnotation);
-        assertSame("package with anntation", conn, test.packageWithAnnotation);
-        assertSame("private with anntation", conn, test.privateWithAnnotation);
+        assertSame("public with anntation", conn, test.publicConnectionWithAnnotation);
+        assertSame("protected with anntation", conn, test.protectedConnectionWithAnnotation);
+        assertSame("package with anntation", conn, test.packageConnectionWithAnnotation);
+        assertSame("private with anntation", conn, test.privateConnectionWithAnnotation);
 
-        assertNull("public non anntation", test.publicNonAnnotation);
-        assertNull("protected non anntation", test.protectedNonAnnotation);
-        assertNull("package non anntation", test.packageNonAnnotation);
-        assertNull("private non anntation", test.privateNonAnnotation);
+        assertNull("public non anntation", test.publicConnectionNonAnnotation);
+        assertNull("protected non anntation", test.protectedConnectionNonAnnotation);
+        assertNull("package non anntation", test.packageConnectionNonAnnotation);
+        assertNull("private non anntation", test.privateConnectionNonAnnotation);
+    }
+
+    @Test
+    public void createTest_DataSource() throws Exception {
+        final DataSource ds = mock(DataSource.class);
+        DbUnitRunnerTest test = (DbUnitRunnerTest) new DbUnitRunner(getClass()) {
+            protected DataSource createDataSource() {
+                return ds;
+            }
+        }.createTest();
+
+        assertSame("public with anntation", ds, test.publicDataSourceWithAnnotation);
+        assertSame("protected with anntation", ds, test.protectedDataSourceWithAnnotation);
+        assertSame("package with anntation", ds, test.packageDataSourceWithAnnotation);
+        assertSame("private with anntation", ds, test.privateDataSourceWithAnnotation);
+
+        assertNull("public non anntation", test.publicDataSourceNonAnnotation);
+        assertNull("protected non anntation", test.protectedDataSourceNonAnnotation);
+        assertNull("package non anntation", test.packageDataSourceNonAnnotation);
+        assertNull("private non anntation", test.privateDataSourceNonAnnotation);
     }
 
     @Test
@@ -308,10 +332,8 @@ public class DbUnitRunnerTest {
     public void assertTables_success() throws Throwable {
         IDataSet dataSet = new FlatXmlDataSet(
             new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
-        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
-        expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
-        conn.close();
-        replay(conn);
+        final IDatabaseConnection conn = mock(IDatabaseConnection.class);
+        when(conn.createDataSet((String[]) anyObject())).thenReturn(dataSet);
 
         new DbUnitRunner(getClass()).new DbUnitStatement(getAnnotation(), null) {
             protected IDatabaseConnection createDatabaseConnection() {
@@ -319,7 +341,9 @@ public class DbUnitRunnerTest {
             }
         }.assertTables();
 
-        verify(conn);
+        verify(conn).createDataSet((String[]) anyObject());
+        verify(conn).close();
+        verifyNoMoreInteractions(conn);
     }
 
     @Test(expected=AssertionError.class)
@@ -327,10 +351,8 @@ public class DbUnitRunnerTest {
     public void assertTables_failure() throws Throwable {
         IDataSet dataSet = new FlatXmlDataSet(
             new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
-        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
-        expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
-        conn.close();
-        replay(conn);
+        final IDatabaseConnection conn = mock(IDatabaseConnection.class);
+        when(conn.createDataSet((String[]) anyObject())).thenReturn(dataSet);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         runner.new DbUnitStatement(getAnnotation(), null) {
@@ -339,7 +361,8 @@ public class DbUnitRunnerTest {
             }
         }.assertTables();
 
-        verify(conn);
+        verify(conn).close();
+        verifyNoMoreInteractions(conn);
     }
 
     @Test
@@ -347,10 +370,8 @@ public class DbUnitRunnerTest {
     public void assertTables_sqlexception_occured() throws Throwable {
         SQLException failureCause = new SQLException("failure");
 
-        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
-        expect(conn.createDataSet((String[]) anyObject())).andThrow(failureCause);
-        conn.close();
-        replay(conn);
+        final IDatabaseConnection conn = mock(IDatabaseConnection.class);
+        when(conn.createDataSet((String[]) anyObject())).thenThrow(failureCause);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
@@ -363,7 +384,6 @@ public class DbUnitRunnerTest {
         } catch (RuntimeException e) {
             assertSame(failureCause, e.getCause());
         }
-        verify(conn);
     }
 
     @Test
@@ -371,14 +391,11 @@ public class DbUnitRunnerTest {
     public void assertTables_databaseunitexception_occured() throws Throwable {
         DataSetException failureCause = new DataSetException("failure");
 
-        IDataSet dataSet = createStrictMock(IDataSet.class);
-        expect(dataSet.getTableNames()).andThrow(failureCause);
-        replay(dataSet);
+        IDataSet dataSet = mock(IDataSet.class);
+        when(dataSet.getTableNames()).thenThrow(failureCause);
 
-        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
-        expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
-        conn.close();
-        replay(conn);
+        final IDatabaseConnection conn = mock(IDatabaseConnection.class);
+        when(conn.createDataSet((String[]) anyObject())).thenReturn(dataSet);
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
@@ -391,8 +408,6 @@ public class DbUnitRunnerTest {
         } catch (RuntimeException e) {
             assertSame(failureCause, e.getCause());
         }
-        verify(dataSet);
-        verify(conn);
     }
 
     @Test
@@ -402,11 +417,9 @@ public class DbUnitRunnerTest {
         IDataSet dataSet = new FlatXmlDataSet(
             new FlatXmlProducer(new InputSource(getClass().getResourceAsStream("test.xml"))));
 
-        final IDatabaseConnection conn = createStrictMock(IDatabaseConnection.class);
-        expect(conn.createDataSet((String[]) anyObject())).andReturn(dataSet);
-        conn.close();
-        expectLastCall().andThrow(closeFailure);
-        replay(conn);
+        final IDatabaseConnection conn = mock(IDatabaseConnection.class);
+        when(conn.createDataSet((String[]) anyObject())).thenReturn(dataSet);
+        doThrow(closeFailure).when(conn).close();
 
         DbUnitRunner runner = new DbUnitRunner(getClass());
         try {
@@ -419,7 +432,6 @@ public class DbUnitRunnerTest {
         } catch (RuntimeException e) {
             assertSame(closeFailure, e.getCause());
         }
-        verify(conn);
     }
 
     @Test
@@ -480,6 +492,39 @@ public class DbUnitRunnerTest {
     public void optionalValue_missing() throws IOException {
         ResourceBundle bundle = new PropertyResourceBundle(new StringReader(""));
         assertNull(DbUnitRunner.optionalValue(bundle, "key"));
+    }
+
+    @Test
+    public void executeUpdate() throws InitializationError, SQLException {
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        PreparedStatement stmt = mock(PreparedStatement.class);
+        Connection conn = mock(Connection.class);
+        IDatabaseConnection dbc = mock(IDatabaseConnection.class);
+        when(dbc.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement("update ...")).thenReturn(stmt);
+        runner.new DbUnitStatement(null, null).executeUpdate(dbc, "update ...");
+    }
+
+    @Test
+    public void executeUpdate_2sql() throws InitializationError, SQLException {
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        PreparedStatement stmt = mock(PreparedStatement.class);
+        Connection conn = mock(Connection.class);
+        IDatabaseConnection dbc = mock(IDatabaseConnection.class);
+        when(dbc.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement("update ...")).thenReturn(stmt);
+        when(conn.prepareStatement("insert ...")).thenReturn(stmt);
+        runner.new DbUnitStatement(null, null).executeUpdate(dbc, "update ...", "insert ...");
+    }
+
+    @Test(expected=SQLException.class)
+    public void executeUpdate_error() throws InitializationError, SQLException {
+        DbUnitRunner runner = new DbUnitRunner(getClass());
+        Connection conn = mock(Connection.class);
+        IDatabaseConnection dbc = mock(IDatabaseConnection.class);
+        when(dbc.getConnection()).thenReturn(conn);
+        when(conn.prepareStatement("update ...")).thenThrow(new SQLException());
+        runner.new DbUnitStatement(null, null).executeUpdate(dbc, "update ...");
     }
 
     private Method getMethod() {

@@ -142,6 +142,20 @@ public class SampleTestCaseWithTestConnection {
         }
     }
 
+    @DbUnitTest(init="sample/emp.xml", sql="alter sequence my_seq restart with 100")
+    public void dbunit_sql() throws SQLException {
+        Statement stmt = null;
+        ResultSet rs = null;
+        try {
+            stmt = conn.createStatement();
+            rs = stmt.executeQuery("select NEXTVAL('my_seq')");
+            assertTrue(rs.next());
+            assertEquals(100, rs.getInt(1));
+        } finally {
+            close(stmt, rs);
+        }
+    }
+
     private void close(Statement stmt, ResultSet rs) {
         SQLException failureCause = null;
         try {

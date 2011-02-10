@@ -71,6 +71,11 @@ public @interface DbUnitTest {
     Sort sort() default Sort.AUTO;
 
     /**
+     * Execute update before setup dataSet.
+     */
+    String[] sql() default "";
+
+    /**
      * Annotation of Database operation.
      * @author kiy0taka
      */

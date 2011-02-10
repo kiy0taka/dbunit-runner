@@ -24,6 +24,7 @@ import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -115,7 +116,9 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
         for (ConfigProperty cp : DatabaseConfig.ALL_PROPERTIES) {
             try {
                 configProperties.put(cp.getProperty(), BUNDLE.getString(cp.getProperty()));
-            } catch (MissingResourceException ignore) {}
+            } catch (MissingResourceException ignore) {
+                // NOP
+            }
         }
     }
 
@@ -186,19 +189,20 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
 
     protected class DbUnitStatement extends Statement {
         private DbUnitTest ann;
-        private Statement stmt;
+        private Statement statement;
 
-        protected DbUnitStatement(DbUnitTest ann, Statement stmt) {
+        protected DbUnitStatement(DbUnitTest ann, Statement statement) {
             this.ann = ann;
-            this.stmt = stmt;
+            this.statement = statement;
         }
 
         public void evaluate() throws Throwable {
             IDatabaseConnection conn = createDatabaseConnection();
             try {
+                executeUpdate(conn, ann.sql());
                 IDataSet initData = dataSet(load(ann.init())).nullValue(ann.nullValue()).toDataSet();
                 ann.operation().toDatabaseOperation().execute(conn, initData);
-                stmt.evaluate();
+                statement.evaluate();
                 if (testConnection != null) {
                     testConnection.commit();
                 }
@@ -267,6 +271,23 @@ public class DbUnitRunner extends BlockJUnit4ClassRunner {
                 throw new RuntimeException(e);
             } catch (DatabaseUnitException e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+        protected void executeUpdate(IDatabaseConnection conn, String... sql) throws SQLException {
+            for (String s : sql) {
+                if (s.isEmpty()) {
+                    continue;
+                }
+                PreparedStatement stmt = null;
+                try {
+                    stmt = conn.getConnection().prepareStatement(s);
+                    stmt.executeUpdate();
+                } finally {
+                    if (stmt != null) {
+                        stmt.close();
+                    }
+                }
             }
         }
     }
