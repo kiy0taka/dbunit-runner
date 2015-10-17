@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pmd version="4.2.5" timestamp="2015-10-16T18:05:24.918">
+<file name="/workspaces/java/dbunit-runner/src/main/java/org/kiy0taka/dbunit/DbUnitRunner.java">
+<violation beginline="119" endline="121" begincolumn="15" endcolumn="13" rule="EmptyCatchBlock" ruleset="Basic Rules" package="org.kiy0taka.dbunit" class="DbUnitRunner" externalInfoUrl="http://pmd.sourceforge.net/rules/basic.html#EmptyCatchBlock" priority="3">
+Avoid empty catch blocks
+</violation>
+</file>
+</pmd>

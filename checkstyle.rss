@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<rss version="0.91">
+  <channel>
+    <title>DbUnit Runner - Checkstyle report</title>
+    <link>http://www.kiy0taka.org/dbunit-runner/</link>
+    <description>DbUnit Runner - Checkstyle report</description>
+    <language>en-us</language>
+    <copyright>&#169;2015 kiy0taka.org</copyright>
+    <item>
+      <title>File: 5,
+             Errors: 1,
+             Warnings: 0,
+             Infos: 0
+      </title>
+            <link>http://www.kiy0taka.org/dbunit-runner//checkstyle.html</link>
+      <description>
+        <p>Click <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html">here</a> for the full Checkstyle report.</p>
+
+        <table summary="Files" boder="1">
+          <thead>
+            <tr>
+              <th>Files</th>
+              <th style="width:30px;"><abbr title="Info">I</abbr></th>
+              <th style="width:30px;"><abbr title="Warning">W</abbr></th>
+              <th style="width:30px;"><abbr title="Error">E</abbr></th>
+            </tr>
+          </thead>
+          <tbody>
+                          <tr>
+                <td>
+                  <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html#org.kiy0taka.dbunit.DbUnitTest.java">org/kiy0taka/dbunit/DbUnitTest.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html#org.kiy0taka.dbunit.DataSetBuilder.java">org/kiy0taka/dbunit/DataSetBuilder.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html#org.kiy0taka.dbunit.TestConnection.java">org/kiy0taka/dbunit/TestConnection.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html#org.kiy0taka.dbunit.TestDataSource.java">org/kiy0taka/dbunit/TestDataSource.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+              </tr>
+                          <tr>
+                <td>
+                  <a href="http://www.kiy0taka.org/dbunit-runner//checkstyle.html#org.kiy0taka.dbunit.DbUnitRunner.java">org/kiy0taka/dbunit/DbUnitRunner.java</a>
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  0
+                </td>
+                <td>
+                  1
+                </td>
+              </tr>
+                      </tbody>
+        </table>
+        
+      </description>
+    </item>
+  </channel>
+</rss>
+
